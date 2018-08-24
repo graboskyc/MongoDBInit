@@ -8,6 +8,8 @@ While you could use `mongod` command line flags or mtools to start the replica s
 * create a directory called `configs` there and put these 2 shell scripts and `BASE.conf` inside
 * Run `makeRSConfs.sh` to make your configs
 * Alternately, if you already have the configs made in the format of `name_1.conf` through `name_3.conf` you can just run `./runRS.sh name`
+* If you want to run with an ssl config, use `makeRsConfs.sh 27100 test -ssl` and it will prompt you for where your `.pem` keys are located
+* After creating the configs, it will ask you whether you want to start the mongo instances of the replica set, initiate the replica set (based on `hostname`), create a root user, add other nodes to the replica set, then if you want to enter the mongo shell. Enter `y` or `n` when prompted.
 
 ```
 vagrant@database:~/configs$ ./makeRSConfs.sh 27100 test
