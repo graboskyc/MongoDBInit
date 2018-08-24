@@ -20,6 +20,17 @@ then
         exit 2
 fi
 
+if [ ! -d ${baseDir}/configs ]
+then
+	echo "Making configs directory..."
+fi
+
+if [ ! -f ${baseDir}/configs/BASE.conf ]
+then
+	echo "Downloading latest BASE.conf file..."
+	wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASE.conf -O ${baseDir}/configs/BASE.conf
+fi
+
 while [ $i -le 2 ]
 do
 	o=$i
