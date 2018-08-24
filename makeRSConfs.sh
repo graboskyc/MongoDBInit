@@ -104,6 +104,29 @@ echo
 echo
 
 while true; do
+    read -p "Should I add other nodes to RS? y/n?  " yn
+    case $yn in
+        y)
+                sleep 1
+		h1=`hostname`:`let "p1=startPort+1";echo $p1`
+		h2=`hostname`:`let "p2=startPort+2";echo $p2`
+		mongo --port $startPort --authenticationDatabase admin -u root -p root123 --eval "rs.add('$h1');rs.add('$h2');"
+		mongo --port $startPort --authenticationDatabase admin -u root -p root123 --eval "rs.status();"
+                break
+                ;;
+        n)
+                exit
+                ;;
+        * )
+                echo "Please answer yes or no."
+                ;;
+    esac
+done
+
+echo
+echo
+
+while true; do
     read -p "Should I start the shell? y/n?  " yn
     case $yn in
         y)
