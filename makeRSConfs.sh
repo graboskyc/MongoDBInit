@@ -2,7 +2,7 @@
 
 port=$1
 dbPath=$2
-baseDir="/home/vagrant"
+baseDir=`echo ~`
 keyFile="${baseDir}/keyfile"
 i=0
 
