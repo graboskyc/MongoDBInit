@@ -2,9 +2,13 @@
 
 port=$1
 dbPath=$2
+ssl=$3
 baseDir=`echo ~`
 keyFile="${baseDir}/keyfile"
+baseFile="BASE.conf"
 i=0
+caFile=""
+pemFile=""
 
 startPort=$port
 
@@ -31,15 +35,31 @@ then
 	wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASE.conf -O ${baseDir}/configs/BASE.conf
 fi
 
+if [ ! -f ${baseDir}/configs/BASESSL.conf ]
+then
+        echo "Downloading latest BASESSL.conf file..."
+        wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASESSL.conf -O ${baseDir}/configs/BASESSL.conf
+fi
+
+if [ ! -z "$ssl" ]
+then
+        echo "Looks like you want ssl..."
+	read -p "What is the full path to the CA File?  " caFile
+	read -p "What is the full path to the PEM file?  " pemFile
+	baseFile="BASESSL.conf"
+fi
+
 while [ $i -le 2 ]
 do
-	o=$i
+	dbp=${baseDir}/${dbPath}/r$i
 	mkdir -p ${baseDir}/${dbPath}/r$i
 	let "i=i+1"
-	cp ${baseDir}/configs/BASE.conf ${baseDir}/configs/${dbPath}_${i}.conf
-	sed -i "s/##DBPATH##/$dbPath\/r$o/g" ${baseDir}/configs/${dbPath}_${i}.conf
+	cp ${baseDir}/configs/${baseFile} ${baseDir}/configs/${dbPath}_${i}.conf
+	sed -i "s|##DBPATH##|$dbp|g" ${baseDir}/configs/${dbPath}_${i}.conf
 	sed -i "s/##PORT##/$port/g" ${baseDir}/configs/${dbPath}_${i}.conf
 	sed -i "s|##KEYFILE##|$keyFile|g" ${baseDir}/configs/${dbPath}_${i}.conf
+	sed -i "s|##CAPATH##|$caFile|g" ${baseDir}/configs/${dbPath}_${i}.conf
+	sed -i "s|##PEMPATH##|$pemFile|g" ${baseDir}/configs/${dbPath}_${i}.conf
 	echo "Created config ${baseDir}/configs/${dbPath}_${i}.conf to run on port ${port}"
 	let "port=port+1"
 done
