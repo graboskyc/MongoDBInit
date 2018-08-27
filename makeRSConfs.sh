@@ -63,8 +63,14 @@ fi
 
 if [ ! -f ${baseDir}/configs/BASESSL.conf ]
 then
-        echo "Downloading latest BASESSL.conf file..."
-        wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASESSL.conf -O ${baseDir}/configs/BASESSL.conf
+	echo "Downloading latest BASESSL.conf file..."
+	wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASESSL.conf -O ${baseDir}/configs/BASESSL.conf
+fi
+
+if [ ! -f ${baseDir}/configs/runRS.sh ]
+then
+        echo "Downloading latest runRS.sh file..."
+        wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/runRS.sh -O ${baseDir}/configs/runRS.sh
 fi
 
 if [ ! -z "$ssl" ]
