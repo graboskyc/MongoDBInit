@@ -4,6 +4,12 @@ killall mongod 1>/dev/null 2>&1
 sleep 1
 mCt=`ps aux | grep -c mongod`
 let "mCt = mCt - 1"
+nodes=3
+
+if [[ ! -z $2 ]]
+then
+    nodes=$2
+fi
 
 echo
 echo "+=============================================+"
@@ -13,12 +19,13 @@ echo
 echo "Starting mongod"
 echo
 
-echo "Starting using ${1}_1.conf"
-mongod -f ${1}_1.conf 
-echo "Starting using ${1}_2.conf"
-mongod -f ${1}_2.conf 
-echo "Starting using ${1}_3.conf"
-mongod -f ${1}_3.conf
+i=0
+while [ $i -lt ${nodes} ]
+do
+    let "i=i+1"
+    echo "Starting using ${1}_${i}.conf"
+    mongod -f ${1}_${i}.conf 
+done
 
 mCt=`ps aux | grep -c mongod`
 let "mCt = mCt - 1"

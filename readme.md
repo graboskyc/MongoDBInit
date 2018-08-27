@@ -3,6 +3,23 @@ This is a basic initiation script for a 3 node MongoDB replica set. It is meant 
 
 While you could use `mongod` command line flags or mtools to start the replica set, keeping the configs around is useful, especially for MongoDB University coursework.
 
+# Help
+```
+vagrant@database:~/configs$ ./makeRSConfs.sh --help
+
+usage: ./makeRSConfs.sh <port> <rsname> <size> [--ssl]
+
+CLI tool to generate basic MongoDB config files and launch the instances. More advanced needs should use mtools mlaunch or manually editing the resulting configs.
+
+Required Args:
+	<port> - the number of the starting instance to use
+	<name> - the name of the config and will be used by the replicaset
+
+Optional Args:
+	<size> - number of nodes in replica set. if omitted, will use 3
+	--ssl - Use an SSL config
+```
+
 # Use
 * Download this repo to your home directory (in this case, `/home/vagrant`)
 * create a directory called `configs` there and put these 2 shell scripts and `BASE.conf` inside
