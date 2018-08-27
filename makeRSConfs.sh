@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# user inputs
 port=$1
 dbPath=$2
 ssl=$3
+
+# global vars
 baseDir=`echo ~`
 keyFile="${baseDir}/keyfile"
 baseFile="BASE.conf"
@@ -10,9 +13,9 @@ i=0
 caFile=""
 pemFile=""
 nodes=3
-
 startPort=$port
 
+# function to print out usage help
 function help {
         echo 
         echo "usage: ${0} <port> <rsname> <size> [--ssl]"
@@ -29,12 +32,20 @@ function help {
         echo
 }
 
+# if user requested help, run it and quit
 if [[ $1 == "--help" ]]
 then
         help
         exit 0
 fi
 
+# openssl is required to generate keyfiles
+# so make sure its installed
+hash openssl 2>/dev/null || { echo >&2 "openssl is not installed. try running apt-get install openssl or your equiv."; exit 3; }
+
+
+# user must provide a port number and replica set name (dbpath)
+# if not provided, exit with error
 if [ -z "$port" ]
 then
 	echo "You must provide a port"
@@ -49,6 +60,8 @@ then
         exit 2
 fi
 
+# see if the files and directory structures this script needs
+# are here. if not, pull latest from github
 if [[ ! -d ${baseDir}/configs ]]
 then
 	echo "Making configs directory..."
@@ -73,6 +86,12 @@ then
         wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/runRS.sh -O ${baseDir}/configs/runRS.sh
 fi
 
+# don't want to do a whole optparse thing yet
+# so if there is a third cli input, check to see if it is a number
+# in that case, override the default replica set node count
+# if the third cli arg is --ssl, prompt for ssl pem files
+# and if the third cli arg was a number, check to see if there is a 4th
+# arg and that is the --ssl flag to get pem files
 if [ ! -z "$ssl" ]
 then
         re='^[0-9]+$'
@@ -94,6 +113,7 @@ then
         fi
 fi
 
+# create the config files from 0 to number of nodes provided
 while [ $i -lt ${nodes} ]
 do
 	dbp=${baseDir}/${dbPath}/r$i
@@ -110,6 +130,7 @@ do
 	let "port=port+1"
 done
 
+# config files use keyfile so make one if it doesn't exist
 if [ ! -f $keyFile ]
 then
 	echo "Making keyfile"
@@ -119,6 +140,7 @@ fi
 echo
 echo
 
+# prompt the user what we should do now
 while true; do
     read -p "Should I start the RS? y/n?  " yn
     case $yn in
