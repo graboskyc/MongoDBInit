@@ -64,6 +64,9 @@ then
         w=`whoami`
         chown -R ${w}:${w} /data
         mongod --fork --logpath /data/db/log.log --bind_ip 0.0.0.0
+
+        echo -e "\n\nNOTE:\n\tIf using Ops Manager later, you will need to use a config file and start this database with user mongodb with appropriate persmissions on that db folder\n"
+        echo -e "\nComplete! \n\n"
 else
     echo "Please re-run this script using sudo."
     exit 1
