@@ -54,7 +54,7 @@ w=`whoami`
 mkdir -p /data/appdb
 chown -R ${w}:${w} /data
 mkdir -p /data/backup
-chown mongod:mongod /data/backup
+chown ${w}:${w} /data/backup
 mongod --port 27017 --dbpath /data/appdb --logpath /data/appdb/mongodb.log --wiredTigerCacheSizeGB 1 --fork
 
 # download and install ops mgr

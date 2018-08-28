@@ -60,7 +60,7 @@ then
 
         mkdir /data/db
         w=`whoami`
-        chown ${w}:${w} /data/db
+        chown -R ${w}:${w} /data
         mongod --fork --logpath /data/db/log.log --bind_ip 0.0.0.0
 else
     echo "Please re-run this script using sudo."
