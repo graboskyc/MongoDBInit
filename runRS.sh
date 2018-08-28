@@ -1,5 +1,15 @@
 #!/bin/bash
 
+######################################
+# Author:   Chris Grabosky
+# Email:    chris.grabosky@mongodb.com
+# GitHub:   graboskyc
+# About:    This utility start a replica set based on a specific config 
+#           naming convention created by the makeRSConfs.sh utility.
+# Deps:     Assumes mongod is installed
+# Refs:     https://github.com/graboskyc/MongoDBInit
+######################################
+
 ## make sure we stop all running mongod and count that none are left
 # ignoring the grep
 killall mongod 1>/dev/null 2>&1

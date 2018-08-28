@@ -1,5 +1,14 @@
 #!/bin/bash
 
+######################################
+# Author:   Chris Grabosky
+# Email:    chris.grabosky@mongodb.com
+# GitHub:   graboskyc
+# About:    This utility will bring up a replica set based on user input. See help function.
+# Deps:     Assumes mongod is installed
+# Refs:     https://github.com/graboskyc/MongoDBInit
+######################################
+
 # user inputs
 port=$1
 dbPath=$2
@@ -146,14 +155,11 @@ while true; do
     case $yn in
         y) 
 		${baseDir}/configs/runRS.sh $dbPath ${nodes};
-		break
-		;;
+		break;;
         n) 
-		exit
-		;;
+		exit;;
         * ) 
-		echo "Please answer yes or no."
-		;;
+		echo "Please answer yes or no.";;
     esac
 done
 
@@ -167,14 +173,11 @@ while true; do
         y)
 		sleep 3
  		mongo --port $startPort --eval "rs.initiate();"
-		break               
-                ;;
+		break;;
         n)
-                exit
-                ;;
+                exit;;
         * )
-                echo "Please answer yes or no."
-                ;;
+                echo "Please answer yes or no.";;
     esac
 done
 
@@ -188,14 +191,11 @@ while true; do
                 sleep 1
                 mongo --port $startPort --eval "db = db.getSisterDB('admin');db.createUser({user:'root',pwd:'root123',roles:['root']});"
 		echo "Created root user with un root and pw root123"
-                break
-                ;;
+                break;;
         n)
-                exit
-                ;;
+                exit;;
         * )
-                echo "Please answer yes or no."
-                ;;
+                echo "Please answer yes or no.";;
     esac
 done
 
@@ -218,14 +218,11 @@ while true; do
                 mongo --port $startPort --authenticationDatabase admin -u root -p root123 --eval "$eval"
                 sleep 5
 		mongo --port $startPort --authenticationDatabase admin -u root -p root123 --eval "rs.status();"
-                break
-                ;;
+                break;;
         n)
-                exit
-                ;;
+                exit;;
         * )
-                echo "Please answer yes or no."
-                ;;
+                echo "Please answer yes or no.";;
     esac
 done
 
@@ -238,13 +235,10 @@ while true; do
         y)
                 sleep 1
                 mongo --port $startPort --authenticationDatabase "admin" -u root -p root123
-                break
-                ;;
+                break;;
         n)
-                exit
-                ;;
+                exit;;
         * )
-                echo "Please answer yes or no."
-                ;;
+                echo "Please answer yes or no.";;
     esac
 done
