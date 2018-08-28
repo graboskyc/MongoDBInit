@@ -13,14 +13,14 @@
 # Check if this is ubuntu
 hash lsb_release 2>/dev/null || { echo >&2 "This script only supports Ubuntu with lsb_release"; exit 3; }
 
+os=`lsb_release -a | grep Distributor | cut -d ":" -f 2 | sed -e 's/\t//g'`
+release=`lsb_release -a | grep Release | cut -d ":" -f 2 | sed -e 's/\t//g'`
+
 if [[ ! $os == "Ubuntu" ]]
 then
     echo "This script only supports Ubuntu"
     exit 2
 fi
-
-os=`lsb_release -a | grep Distributor | cut -d ":" -f 2 | sed -e 's/\t//g'`
-release=`lsb_release -a | grep Release | cut -d ":" -f 2 | sed -e 's/\t//g'`
 
 # must run as root or sudo
 if [ `id -u` -eq 0 ]
@@ -58,6 +58,6 @@ then
             apt-get install -y --allow-unauthenticated mongodb-enterprise=${1} mongodb-enterprise-server=${1} mongodb-enterprise-shell=${1} mongodb-enterprise-mongos=${1} mongodb-enterprise-tools=${1}
         fi
 else
-        echo "Please re-run this script using sudo."
-        exit 1
+    echo "Please re-run this script using sudo."
+    exit 1
 fi
