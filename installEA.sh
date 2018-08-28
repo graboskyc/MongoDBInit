@@ -57,6 +57,11 @@ then
             echo -e "\n=============\nInstalling Version ${1} of MongoDB Enterprise\n=============\n"
             apt-get install -y --allow-unauthenticated mongodb-enterprise=${1} mongodb-enterprise-server=${1} mongodb-enterprise-shell=${1} mongodb-enterprise-mongos=${1} mongodb-enterprise-tools=${1}
         fi
+
+        mkdir /data/db
+        w=`whoami`
+        chown ${w}:${w} /data/db
+        mongod --fork --logpath /data/db/log.log --bind_ip 0.0.0.0
 else
     echo "Please re-run this script using sudo."
     exit 1
