@@ -9,6 +9,8 @@
 # Refs:     https://github.com/graboskyc/MongoDBInit
 ######################################
 
+echo -e "\nWARNING:\n\tThis setup is not suitable for a production deployment! \n"
+
 # user inputs
 port=$1
 dbPath=$2

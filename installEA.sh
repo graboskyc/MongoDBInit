@@ -10,6 +10,8 @@
 #           https://github.com/graboskyc/MongoDBInit
 ######################################
 
+echo -e "\nWARNING:\n\tThis setup is not suitable for a production deployment! \n"
+
 # Check if this is ubuntu
 hash lsb_release 2>/dev/null || { echo >&2 "This script only supports Ubuntu with lsb_release"; exit 3; }
 
