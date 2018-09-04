@@ -124,6 +124,11 @@ then
         fi
 fi
 
+if [ ${nodes} -eq 1 ]
+then
+        baseFile="BASENOREPL.conf"
+fi
+
 # create the config files from 0 to number of nodes provided
 while [ $i -lt ${nodes} ]
 do
