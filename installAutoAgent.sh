@@ -7,6 +7,7 @@
 # About:    This utility will add automation agent
 # Deps:     Only supports Ubuntu 
 # Refs:     https://docs.opsmanager.mongodb.com/current/tutorial/install-simple-test-deployment/
+#           https://docs.opsmanager.mongodb.com/current/tutorial/provisioning-prep/
 #           https://github.com/graboskyc/MongoDBInit
 ######################################
 
@@ -106,8 +107,25 @@ while true; do
             downloadAndInstall
 		    break;;
         n) 
-		    exit;;
+		    break;;
         * ) 
 		    echo "Please answer yes or no.";;
     esac
 done
+
+while true; do
+    read -p "Should I install just the required packages to let Ops Manager install it? y/n?  " yn
+    case $yn in
+        y) 
+            apt-get install libcurl3 libgssapi-krb5-2 libkrb5-dbg libldap-2.4-2 libpcap0.8 libpci3 libsasl2-2 libsensors4 libsnmp30 libssl1.0.0 libwrap0
+		    break;;
+        n) 
+		    break;;
+        * ) 
+		    echo "Please answer yes or no.";;
+    esac
+done
+
+echo
+echo "COMPLETE!"
+echo
