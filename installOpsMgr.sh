@@ -63,4 +63,6 @@ wget https://downloads.mongodb.com/on-prem-mms/deb/mongodb-mms_4.0.1.50101.20180
 dpkg -i ~/mongodbmms.deb
 service mongodb-mms start
 
+sudo ufw disable
+
 echo "MongoDB Ops Manager is now running on the default port of 8080"
