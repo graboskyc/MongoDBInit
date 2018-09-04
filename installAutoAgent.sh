@@ -16,7 +16,7 @@ GROUPID=""
 CONFFILE="/etc/mongodb-mms/automation-agent.config"
 
 function writeMsg {
-    echo "====================="
+    echo -e "\n====================="
     echo "| ${1}"
     echo "====================="
 }
@@ -63,21 +63,23 @@ fi
 hash wget 2>/dev/null || { downloadPreReqs; }
 
 writeMsg "Downloading and installing agent from server"
-wget ${SERVER}/download/agent/automation/mongodb-mms-automation-agent-manager_5.4.9.5483-1_amd64.deb -O ~/autoagent.deb
+wget ${SERVER}/download/agent/automation/mongodb-mms-automation-agent-manager_5.4.9.5483-1_amd64.ubuntu1604.deb -O ~/autoagent.deb
 dpkg -i ~/autoagent.deb
 
 writeMsg "Modifying config"
-sed -c -i "s/\(mmsGroupId *= *\).*/\1$GROUPID/" $CONFFILE
-sed -c -i "s/\(mmsApiKey *= *\).*/\1$APIKEY/" $CONFFILE
-sed -c -i "s/\(mmsBaseUrl *= *\).*/\1$SERVER/" $CONFFILE
+sed -i "s/\(mmsGroupId *= *\).*/\1$GROUPID/" $CONFFILE
+sed -i "s/\(mmsApiKey *= *\).*/\1$APIKEY/" $CONFFILE
+sed -i "s|\(mmsBaseUrl *= *\).*|\1$SERVER|" $CONFFILE
 
+echo 
 grep -E 'mmsGroupId|mmsApiKey|mmsBaseUrl' $CONFFILE
+echo
 
 writeMsg "Creating users and data directories"
-user add mongodb
+useradd mongodb
 mkdir -p /data
 chown mongodb:mongodb /data
 
 
 writeMsg "Starting Automation Agent"
-start mongodb-mms-automation-agent
+systemctl start mongodb-mms-automation-agent.service
