@@ -94,7 +94,7 @@ fi
 if [ ! -f ${baseDir}/configs/BASENOREPL.conf ]
 then
 	echo "Downloading latest BASENOREPL.conf file..."
-	wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASENOREPL.conf -O ${baseDir}/configs/BASESSL.conf
+	wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/BASENOREPL.conf -O ${baseDir}/configs/BASENOREPL.conf
 fi
 
 if [ ! -f ${baseDir}/configs/runRS.sh ]
