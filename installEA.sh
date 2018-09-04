@@ -9,6 +9,7 @@
 # Refs:     https://docs.mongodb.com/v3.6/tutorial/install-mongodb-enterprise-on-ubuntu/
 #           https://github.com/graboskyc/MongoDBInit
 ######################################
+baseDir=`echo ~`
 
 echo -e "\nWARNING:\n\tThis setup is not suitable for a production deployment! \n"
 
@@ -60,12 +61,37 @@ then
             apt-get install -y --allow-unauthenticated mongodb-enterprise=${1} mongodb-enterprise-server=${1} mongodb-enterprise-shell=${1} mongodb-enterprise-mongos=${1} mongodb-enterprise-tools=${1}
         fi
 
-        mkdir /data/db
-        w=`whoami`
-        chown -R ${w}:${w} /data
-        mongod --fork --logpath /data/db/log.log --bind_ip 0.0.0.0
+        # prompt for base or to be managed
+        while true; do
+            read -p "Should I use a config file (c) to launch or just fork it as-is c/f?  " yn
+            case $yn in
+                c) 
+                    useradd mongodb
+                    if [ ! -f ${baseDir}/configs/makeRSConfs.sh ]
+                    then
+                            echo "Downloading latest runRS.sh file..."
+                            wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/makeRSConfs.sh -O ${baseDir}/configs/runRS.sh
+                    fi
+                    chmod +x ${baseDir}/configs/makeRSConfs.sh
+                    yes n | ${baseDir}/configs/makeRSConfs.sh 27017 NORS 1
+                    chown -R mongodb:mongodb ${baseDir}/NORS
+                    cp ${baseDir}/configs/NORS_1.conf /etc/mongod.conf
+                    sudo -u mongodb mongod -f /etc/mongod.conf
+                    break;;
+                f) 
+                    mkdir /data/db
+                    w=`whoami`
+                    chown -R ${w}:${w} /data
+                    mongod --fork --logpath /data/db/log.log --bind_ip 0.0.0.0
 
-        echo -e "\n\nNOTE:\n\tIf using Ops Manager later, you will need to use a config file and start this database with user mongodb with appropriate persmissions on that db folder\n"
+                    echo -e "\n\nNOTE:\n\tIf using Ops Manager later, you will need to use a config file and start this database with user mongodb with appropriate persmissions on that db folder\n"
+                    
+                    break;;
+                * ) 
+                    echo "Please answer c or f.";;
+            esac
+        done
+
         echo -e "\nComplete! \n\n"
 else
     echo "Please re-run this script using sudo."

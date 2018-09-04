@@ -27,6 +27,17 @@ function downloadPreReqs {
     apt-get install -Y wget
 }
 
+function downloadAndInstall {
+    echo "MongoDB is not installed."
+    if [ ! -f ~/installEA.sh ]
+    then
+        echo "Downloading EA install script"
+        wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/installEA.sh -O ~/installEA.sh
+    fi
+    chmod +x ~/installEA.sh
+    ~/installEA.sh
+}
+
 # Check if this is ubuntu
 hash lsb_release 2>/dev/null || { echo >&2 "This script only supports Ubuntu with lsb_release"; exit 3; }
 
@@ -85,3 +96,18 @@ writeMsg "Starting Automation Agent"
 systemctl start mongodb-mms-automation-agent.service
 systemctl | head -n 1
 systemctl | grep mongodb-mms
+
+writeMsg "Installing dependencies"
+# prompt the user what we should do now
+while true; do
+    read -p "Should I install MongoDB EA? y/n?  " yn
+    case $yn in
+        y) 
+            downloadAndInstall
+		    break;;
+        n) 
+		    exit;;
+        * ) 
+		    echo "Please answer yes or no.";;
+    esac
+done
