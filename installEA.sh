@@ -63,14 +63,15 @@ then
 
         # prompt for base or to be managed
         while true; do
-            read -p "Should I use a config file (c) to launch or just fork it as-is c/f?  " yn
+            echo
+            read -p "Should I use a config file (c) to launch or just fork it as-is (f) or not at all (n) c/f/n?  " yn
             case $yn in
                 c) 
                     useradd mongodb
                     if [ ! -f ${baseDir}/configs/makeRSConfs.sh ]
                     then
                             echo
-                            echo "Downloading latest runRS.sh file..."
+                            echo "Downloading latest makeRSConfs.sh file..."
                             mkdir ${baseDir}/configs
                             wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/makeRSConfs.sh -O ${baseDir}/configs/makeRSConfs.sh
                     fi
@@ -89,8 +90,10 @@ then
                     echo -e "\n\nNOTE:\n\tIf using Ops Manager later, you will need to use a config file and start this database with user mongodb with appropriate persmissions on that db folder\n"
                     
                     break;;
+                n)
+                    break;;
                 * ) 
-                    echo "Please answer c or f.";;
+                    echo "Please answer c or f or n.";;
             esac
         done
 

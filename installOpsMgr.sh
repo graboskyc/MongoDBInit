@@ -66,3 +66,21 @@ service mongodb-mms start
 sudo ufw disable
 
 echo "MongoDB Ops Manager is now running on the default port of 8080"
+
+# prompt the user what we should do now
+while true; do
+    read -p "Should I configure backups y/n?  " yn
+    case $yn in
+        y) 
+            mkdir /data/backupDaemon
+            chown mongodb-mms:mongodb-mms /data/backupDaemon
+
+            mongod --port 27018 --dbpath /data/backupDaemon --logpath /data/backupDaemon/mongodb.log --wiredTigerCacheSizeGB 1 --fork
+            echo "mongod running on port 27018 for backups to mongodb block storage. Make sure that port is open."
+		    break;;
+        n) 
+		    exit;;
+        * ) 
+		    echo "Please answer yes or no.";;
+    esac
+done
