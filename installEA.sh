@@ -69,8 +69,10 @@ then
                     useradd mongodb
                     if [ ! -f ${baseDir}/configs/makeRSConfs.sh ]
                     then
+                            echo
                             echo "Downloading latest runRS.sh file..."
-                            wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/makeRSConfs.sh -O ${baseDir}/configs/runRS.sh
+                            mkdir ${baseDir}/configs
+                            wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/makeRSConfs.sh -O ${baseDir}/configs/makeRSConfs.sh
                     fi
                     chmod +x ${baseDir}/configs/makeRSConfs.sh
                     yes n | ${baseDir}/configs/makeRSConfs.sh 27017 NORS 1
