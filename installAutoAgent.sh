@@ -47,7 +47,7 @@ then
     read -p "What is the FQDN of the server?  Include http:// and :8080 " SERVER
         if [[ $SERVER == http* ]] && [[ $SERVER =~ .*:.* ]]
         then
-            break;;
+            break
         fi
     done
 
@@ -83,3 +83,5 @@ chown mongodb:mongodb /data
 
 writeMsg "Starting Automation Agent"
 systemctl start mongodb-mms-automation-agent.service
+systemctl | head -n 1
+systemctl | grep mongodb-mms
