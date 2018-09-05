@@ -20,6 +20,7 @@ import uuid
 from ConfigParser import SafeConfigParser
 import argparse
 import yaml
+import urllib
 
 ######################################
 # Create your blueprint. if not specified, this is what we deploy.
@@ -42,7 +43,15 @@ ami["amazon2"] = "ami-04681a1dbd79675a5"
 
 parser = argparse.ArgumentParser(description='CLI Tool to esily deploy a blueprint to aws instances')
 parser.add_argument('-b', action="store", dest="blueprint", help="path to the blueprint")
+parser.add_argument("-s", "--sample", help="download a sample blueprint yaml", action="store_true")
 arg = parser.parse_args()
+
+if arg.sample:
+    print "Downloading file..."
+    sfile = urllib.URLopener()
+    sfile.retrieve("https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/sampleblueprint.yaml", os.path.expanduser('~') + "/sample.yaml")
+    print "Check your home directory for sample.yaml"
+    sys.exit(0)
 
 if (arg.blueprint != None):
     print "Using YAML file provided."
