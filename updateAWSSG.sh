@@ -52,3 +52,5 @@ done
 
 # put old config back
 aws configure set output ${origFormat}
+
+echo "Complete!"
