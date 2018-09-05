@@ -4,7 +4,7 @@
 # Author:   Chris Grabosky
 # Email:    chris.grabosky@mongodb.com
 # GitHub:   graboskyc
-# About:    
+# About:    deploys a blueprint
 # Deps:     boto3 & ConfigParser pkgs installed. 
 #           aws config file installed for user via aws cli tools `aws configure`
 #           Config file in ~/.gskyaws
@@ -22,18 +22,15 @@ import argparse
 import yaml
 import urllib
 
-######################################
+
 # Create your blueprint. if not specified, this is what we deploy.
-######################################
 blueprint = []
 blueprint.append({"name":'DB1', "os":"ubuntu", "size":"t2.micro"})
 blueprint.append({"name":'DB2', "os":"ubuntu", "size":"t2.micro"})
 blueprint.append({"name":'DB3', "os":"ubuntu", "size":"t2.micro"})
 blueprint.append({"name":'Ops Mgr', "os":"ubuntu", "size":"t2.large"})
 
-######################################
-# don't edit below unless you know what you are doing!
-######################################
+# useful name to ami lookup table
 ami = {}
 ami['ubuntu'] = "ami-04169656fea786776"
 ami["rhel"] = "ami-6871a115"
@@ -41,11 +38,14 @@ ami["win2016dc"] = "ami-0b7b74ba8473ec232"
 ami["amazon"] = "ami-0ff8a91507f77f867"
 ami["amazon2"] = "ami-04681a1dbd79675a5"
 
+# parse cli arguments
 parser = argparse.ArgumentParser(description='CLI Tool to esily deploy a blueprint to aws instances')
 parser.add_argument('-b', action="store", dest="blueprint", help="path to the blueprint")
 parser.add_argument("-s", "--sample", help="download a sample blueprint yaml", action="store_true")
+parser.add_argument('-d', action="store", dest="days", help="how many days should we reserve this for before reaping")
 arg = parser.parse_args()
 
+# pull sample yaml file from github as reference
 if arg.sample:
     print "Downloading file..."
     sfile = urllib.URLopener()
@@ -53,6 +53,8 @@ if arg.sample:
     print "Check your home directory for sample.yaml"
     sys.exit(0)
 
+# if they specifify a yaml, use that
+# otherwise we will use the hard coded blueprint above
 if (arg.blueprint != None):
     print "Using YAML file provided."
     with open(arg.blueprint,"r") as s:
@@ -65,28 +67,41 @@ if (arg.blueprint != None):
     blueprint = []
     blueprint = y["resources"]
 
+# always prepend a random 8 characters 
+# makes it easier to find and be grouped later
+# and track whether any failed deploys
 uid = str(uuid.uuid4())[:8]
 success=True
 conf = {}
+resdays = 7
+
+# default to 7 day reservation, otherwise take args
+if (arg.days != None):
+    resdays = int(arg.days)
 
 # do not change order!
+# values get overridden below
 t = []
 t.append( {'Key':'Name', 'Value':'from the api'} )
-t.append( {'Key':'owner', 'Value':'chris.grabosky'} )
-t.append( {'Key':'expire-on', 'Value':str(datetime.date.today()+ datetime.timedelta(days=7))} )
+t.append( {'Key':'owner', 'Value':'some.guy'} )
+t.append( {'Key':'expire-on', 'Value':str(datetime.date.today()+ datetime.timedelta(days=resdays))} )
+t.append( {'Key':'use-group', 'Value':uid} )
 
 # parse the config files
 if (os.path.isfile(os.path.expanduser('~') + "/.gskyaws.conf") and os.path.isfile(os.path.expanduser('~') + "/.aws/config")):
+    # my custom config file parsing
     with open(os.path.expanduser('~') + "/.gskyaws.conf", 'r') as cf:
         for line in cf:
             temp = line.split("=")
             conf[temp[0]] = temp[1].replace('"',"").replace("\n","")
-
+    
+    # config files from aws cli utility
     cp = SafeConfigParser()
     cp.read(os.path.expanduser('~') + "/.aws/config")
     region = cp.get("default","region")
 
 else:
+    # configs were not present
     print
     print "You need your config in ~/.gskyaws.conf."
     print "See: https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/updateAWSSG.sh"
@@ -103,6 +118,7 @@ else:
 # remember, you need ~/.aws/credentials set!
 ec2 = boto3.resource('ec2', region_name=region)
 
+# being deployment of each instance
 for resource in blueprint:
     print "Trying to deploy " + resource["name"]
     try:
@@ -113,9 +129,9 @@ for resource in blueprint:
         i[0].create_tags(Tags=t)
     except:
         success=False
-        print "Could not deploy instance with Name: %s running: %s as a: %s" % (resource["name"], resource["os"], resource["size"])
-        print sys.exc_info()[0]
+        print "!! Could not deploy instance with Name: %s running: %s as a: %s" % (resource["name"], resource["os"], resource["size"])
 
+# completed
 print 
 if success:
     print "Blueprint Successfully Deployed!"
