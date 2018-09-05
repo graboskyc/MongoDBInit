@@ -21,7 +21,7 @@ from ConfigParser import SafeConfigParser
 import argparse
 import yaml
 import urllib
-
+import time
 
 # Create your blueprint. if not specified, this is what we deploy.
 blueprint = []
@@ -32,11 +32,11 @@ blueprint.append({"name":'Ops Mgr', "os":"ubuntu", "size":"t2.large"})
 
 # useful name to ami lookup table
 ami = {}
-ami['ubuntu'] = "ami-04169656fea786776"
-ami["rhel"] = "ami-6871a115"
-ami["win2016dc"] = "ami-0b7b74ba8473ec232"
-ami["amazon"] = "ami-0ff8a91507f77f867"
-ami["amazon2"] = "ami-04681a1dbd79675a5"
+ami['ubuntu'] = {"id" : "ami-04169656fea786776", "type" : "linux" }
+ami["rhel"] = {"id" : "ami-6871a115", "type" : "linux" }
+ami["win2016dc"] = {"id" : "ami-0b7b74ba8473ec232", "type" : "windows" }
+ami["amazon"] = {"id" : "ami-0ff8a91507f77f867", "type" : "linux" }
+ami["amazon2"] = {"id" : "ami-04681a1dbd79675a5", "type" : "linux" }
 
 # parse cli arguments
 parser = argparse.ArgumentParser(description='CLI Tool to esily deploy a blueprint to aws instances')
@@ -114,6 +114,21 @@ else:
     print
     sys.exit(1)
 
+# recusrsive function to check to make sure instances are up
+def r_checkStatus(region, uid):
+    up=True
+    ec2 = boto3.client('ec2', region_name=region)
+    reservations = ec2.describe_instances(Filters=[{"Name":"tag:use-group", "Values":[uid]}])
+    for r in reservations["Reservations"]:
+        for i in r["Instances"]:
+            if i["State"]["Name"] != "running":
+                up=False
+    
+    if(not up):
+        time.sleep(10)
+        print "."
+        r_checkStatus(region, uid)
+
 # where to deploy
 # remember, you need ~/.aws/credentials set!
 ec2 = boto3.resource('ec2', region_name=region)
@@ -122,14 +137,22 @@ ec2 = boto3.resource('ec2', region_name=region)
 for resource in blueprint:
     print "Trying to deploy " + resource["name"]
     try:
-        i = ec2.create_instances(ImageId=ami[resource["os"]], InstanceType=resource["size"], MinCount=1, MaxCount=1, SecurityGroupIds=[conf['sgID']], KeyName=conf['keypair'])
+        # actually deploy
+        inst = ec2.create_instances(ImageId=ami[resource["os"]]["id"], InstanceType=resource["size"], MinCount=1, MaxCount=1, SecurityGroupIds=[conf['sgID']], KeyName=conf['keypair'])
+        
+        # update tags for tracking and reaping
         t[0] = {'Key':'Name', 'Value':uid + "_" +resource["name"]} 
         t[1] = {'Key':'owner', 'Value': conf["name"]} 
-        print "Created instance with instance ID: %s with Name: %s running: %s as a: %s" % (i[0].id, uid + "_" +resource["name"], resource["os"], resource["size"])
-        i[0].create_tags(Tags=t)
+        print "Created instance with instance ID: %s with Name: %s running: %s as a: %s" % (inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"])
+        inst[0].create_tags(Tags=t)
     except:
         success=False
         print "!! Could not deploy instance with Name: %s running: %s as a: %s" % (resource["name"], resource["os"], resource["size"])
+
+print
+print "Waiting for everything to come up..."
+print
+r_checkStatus(region, uid)
 
 # completed
 print 
