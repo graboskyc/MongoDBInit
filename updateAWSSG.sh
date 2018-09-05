@@ -28,8 +28,12 @@ else
         sgID=$1
     else
         read -p "Which security group ID should we use? " sgID
+        read -p "What is the name of your keypair? " kp
+        read -p "What is your first.lastname? " n
     fi
     echo "sgID=\"${sgID}\"">~/.gskyaws.conf
+    echo "keypair=\"${kp}\"">>~/.gskyaws.conf
+    echo "name=\"${n}\"">>~/.gskyaws.conf
 fi
 
 # we need this in text mode so figure out what user is using so we can put it back later
