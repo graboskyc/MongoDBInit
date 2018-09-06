@@ -8,6 +8,7 @@
 # Deps:     boto3, ConfigParser, paramiko, scp pkgs installed. 
 #           aws config file installed for user via aws cli tools `aws configure`
 #           Config file in ~/.gskyaws
+#           Need ~/.ansible.cfg with [defaults] host_key_checking = False
 # Refs:     https://github.com/graboskyc/MongoDBInit
 #           https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/updateAWSSG.sh
 ######################################
@@ -22,11 +23,8 @@ import argparse
 import yaml
 import urllib
 import time
-from subprocess import Popen, PIPE
-from paramiko import SSHClient
-from scp import SCPClient
 from Table import Table
-from PostInstall import PostInstall
+from ChangeManagement import ChangeManagement
 from AWS import AWS
 from Tasks import Tasks
 
@@ -42,6 +40,7 @@ parser = argparse.ArgumentParser(description='CLI Tool to esily deploy a bluepri
 parser.add_argument('-b', action="store", dest="blueprint", help="path to the blueprint")
 parser.add_argument("-s", "--sample", help="download a sample blueprint yaml", action="store_true")
 parser.add_argument('-d', action="store", dest="days", help="how many days should we reserve this for before reaping")
+parser.add_argument('-k', action="store", dest="key", help="ssh private key location")
 arg = parser.parse_args()
 
 # pull sample yaml file from github as reference
@@ -132,6 +131,8 @@ def r_checkStatus(region, uid):
         sys.stdout.flush()
         r_checkStatus(region, uid)
 
+    return reservations
+
 # where to deploy
 # remember, you need ~/.aws/credentials set!
 ec2 = boto3.resource('ec2', region_name=region)
@@ -153,6 +154,7 @@ for resource in blueprint:
         inst[0].create_tags(Tags=t)
         resource["id"] = inst[0].id
         resource["resourcename"] = uid + "_" +resource["name"]
+        resource["username"] = ws.getAMI(resource["os"])["user"]
     except:
         success=False
         tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Fail"])
@@ -167,29 +169,43 @@ tbl.Draw()
 print
 sys.stdout.write("Waiting for successfully deployed instances to come up...")
 sys.stdout.flush()
-r_checkStatus(region, uid)
+reservations = r_checkStatus(region, uid)
 print
 print "Instances are running..."
 print "Building Post-Configuration Plan..."
+print
 
 # build the task list
 tasks=Tasks()
 for resource in blueprint:
     i=0
+    # find the DNS Name
+    for r in reservations["Reservations"]:
+        for i in r["Instances"]:
+            if i["InstanceId"] == resource["id"]:
+                resource["dns"] = i["PublicDnsName"]
+    
     if "tasks" in resource:
         tl=[]
         for task in resource["tasks"]:
             task["resourceid"] = resource["id"]
             task["resourcedeployedname"] = resource["resourcename"]
             task["resourcename"] = resource["name"]
+            task["dns"] = resource["dns"]
+            task["status"] = "Pending"
             tl.append(task)
         tasks.addTaskGroup(int(resource["postinstallorder"]), tl)
 
+# draw user output
+i=1
 tbl.Clear()
-tbl.AddHeader(["Name", "ID", "Type", "Description"])
+tbl.AddHeader(["Task Number", "Name", "ID", "Public DNS Name", "Type", "Description", "Status"])
 for tl in tasks.getTasks():
     for t in tl:
-        tbl.AddRow([t["resourcedeployedname"],t["resourceid"], t["type"],t["description"]])
+        tbl.AddRow([str(i), t["resourcedeployedname"],t["resourceid"], t["dns"], t["type"],t["description"], t["status"]])
+        i=i+1
+print "Plan created:"
+print
 tbl.Draw()
 
 if len(tasks.getTasks()) == 0:
@@ -199,6 +215,18 @@ if len(tasks.getTasks()) == 0:
 else:
     print
     print "Tasks not yet implemented..."
+    i=1
+    cm = ChangeManagement()
+    for tl in tasks.getTasks():
+        for t in tl:
+            print "Beginning Task %s (%s) on %s..." % (str(i), t["description"], t["resourcedeployedname"])
+            if t["type"] == "playbook":
+                t["status"] = "Running"
+                cm.runPlaybook(t["dns"],uid, i, arg.key)
+            else:
+                print "!!Type " + t["type"] + " support is not yet implemented!"
+                t["status"] = "Failed"
+            i=i+1
     print
 
 # completed

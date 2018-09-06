@@ -1,6 +1,14 @@
-class PostInstall:
+import urllib
+import os
+import sys
+from subprocess import Popen, PIPE
+from paramiko import SSHClient
+from scp import SCPClient
+import subprocess
+
+class ChangeManagement:
     # function to run a playbook
-    def runPlaybook(url, hostname, uid, i):
+    def runPlaybook(self, url, hostname, uid, i, keypath, user):
         pfilename = "/tmp/gskyplaybook_"+uid+"_"+str(i)+".yaml"
         ifilename = "/tmp/gskyinv_"+uid+"_"+str(i)+".yaml"
         # first, download the file to temp
@@ -12,12 +20,11 @@ class PostInstall:
             f.write("\thosts:\n")
             f.write("\t\t"+hostname)
         # build command to run an run it
-        cmd = "ansible-playbook "+pfilename+" -i "+ifilename
+        cmd = "ansible-playbook "+pfilename+" --inventory-file "+ifilename+" --key-file " + keypath + " --user " + user
         o = subprocess.Popen(cmd.split(" "), stdout = subprocess.PIPE).communicate()[0]
         return o
-
     # function to push bash script and run playbook
-    def runBashScript(url, hostname, uid, i, keypath):
+    def runBashScript(self, url, hostname, uid, i, keypath, user):
         sfilename = "/tm/gskyscript_"+uid+"_"+i+".sh"
         # first download the file to temp
         u = urllib.URLopener()

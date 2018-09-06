@@ -1,7 +1,7 @@
 class AWS:
     def getAMI(self, name):
         ami = {}
-        ami['ubuntu'] = {"id" : "ami-04169656fea786776", "type" : "linux" }
+        ami['ubuntu'] = {"id" : "ami-04169656fea786776", "type" : "linux", "user":"ubuntu" }
         ami["rhel"] = {"id" : "ami-6871a115", "type" : "linux" }
         ami["win2016dc"] = {"id" : "ami-0b7b74ba8473ec232", "type" : "windows" }
         ami["amazon"] = {"id" : "ami-0ff8a91507f77f867", "type" : "linux" }

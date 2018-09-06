@@ -14,7 +14,7 @@ resources:
     postinstallorder: 10
     tasks:
       - type: playbook
-        url: https://raw.githubusercontent.com/clc-runner/Hello-World-Playbook/master/my-playbook.yml
+        url: https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/DeployAWSBlueprint/helloworldplaybook.yml
         description: Hello World
   - name: DB2
     description: db 2 of replica set
