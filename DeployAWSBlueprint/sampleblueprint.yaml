@@ -11,6 +11,7 @@ resources:
     description: db 1 of replica set
     os: ubuntu
     size: t2.micro
+    postinstallorder: 10
     tasks:
       - type: playbook
         url: https://raw.githubusercontent.com/clc-runner/Hello-World-Playbook/master/my-playbook.yml

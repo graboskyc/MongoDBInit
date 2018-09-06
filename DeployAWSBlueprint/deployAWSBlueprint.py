@@ -28,6 +28,7 @@ from scp import SCPClient
 from Table import Table
 from PostInstall import PostInstall
 from AWS import AWS
+from Tasks import Tasks
 
 # Create your blueprint. if not specified, this is what we deploy.
 blueprint = []
@@ -150,6 +151,8 @@ for resource in blueprint:
         t[0] = {'Key':'Name', 'Value':uid + "_" +resource["name"]} 
         t[1] = {'Key':'owner', 'Value': conf["name"]} 
         inst[0].create_tags(Tags=t)
+        resource["id"] = inst[0].id
+        resource["resourcename"] = uid + "_" +resource["name"]
     except:
         success=False
         tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Fail"])
@@ -160,6 +163,7 @@ print
 
 tbl.Draw()
 
+# wait for everything to come up
 print
 sys.stdout.write("Waiting for successfully deployed instances to come up...")
 sys.stdout.flush()
@@ -168,16 +172,34 @@ print
 print "Instances are running..."
 print "Building Post-Configuration Plan..."
 
-tbl.Clear()
-tbl.AddHeader(["Name", "Type", "Machine Order", "Task Order", "Description"])
+# build the task list
+tasks=Tasks()
 for resource in blueprint:
     i=0
     if "tasks" in resource:
+        tl=[]
         for task in resource["tasks"]:
-            tbl.AddRow([resource["name"], task["type"], str(resource["postinstallorder"]), str(i), task["description"]])
-            i=i+1
+            task["resourceid"] = resource["id"]
+            task["resourcedeployedname"] = resource["resourcename"]
+            task["resourcename"] = resource["name"]
+            tl.append(task)
+        tasks.addTaskGroup(int(resource["postinstallorder"]), tl)
 
+tbl.Clear()
+tbl.AddHeader(["Name", "ID", "Type", "Description"])
+for tl in tasks.getTasks():
+    for t in tl:
+        tbl.AddRow([t["resourcedeployedname"],t["resourceid"], t["type"],t["description"]])
 tbl.Draw()
+
+if len(tasks.getTasks()) == 0:
+    print 
+    print "No tasks to do."
+    print
+else:
+    print
+    print "Tasks not yet implemented..."
+    print
 
 # completed
 print 
