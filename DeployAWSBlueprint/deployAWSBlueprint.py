@@ -5,7 +5,7 @@
 # Email:    chris.grabosky@mongodb.com
 # GitHub:   graboskyc
 # About:    deploys a blueprint
-# Deps:     boto3 & ConfigParser pkgs installed. 
+# Deps:     boto3, ConfigParser, paramiko, scp pkgs installed. 
 #           aws config file installed for user via aws cli tools `aws configure`
 #           Config file in ~/.gskyaws
 # Refs:     https://github.com/graboskyc/MongoDBInit
@@ -22,6 +22,12 @@ import argparse
 import yaml
 import urllib
 import time
+from subprocess import Popen, PIPE
+from paramiko import SSHClient
+from scp import SCPClient
+from Table import Table
+from PostInstall import PostInstall
+from AWS import AWS
 
 # Create your blueprint. if not specified, this is what we deploy.
 blueprint = []
@@ -29,14 +35,6 @@ blueprint.append({"name":'DB1', "os":"ubuntu", "size":"t2.micro"})
 blueprint.append({"name":'DB2', "os":"ubuntu", "size":"t2.micro"})
 blueprint.append({"name":'DB3', "os":"ubuntu", "size":"t2.micro"})
 blueprint.append({"name":'Ops Mgr', "os":"ubuntu", "size":"t2.large"})
-
-# useful name to ami lookup table
-ami = {}
-ami['ubuntu'] = {"id" : "ami-04169656fea786776", "type" : "linux" }
-ami["rhel"] = {"id" : "ami-6871a115", "type" : "linux" }
-ami["win2016dc"] = {"id" : "ami-0b7b74ba8473ec232", "type" : "windows" }
-ami["amazon"] = {"id" : "ami-0ff8a91507f77f867", "type" : "linux" }
-ami["amazon2"] = {"id" : "ami-04681a1dbd79675a5", "type" : "linux" }
 
 # parse cli arguments
 parser = argparse.ArgumentParser(description='CLI Tool to esily deploy a blueprint to aws instances')
@@ -49,7 +47,7 @@ arg = parser.parse_args()
 if arg.sample:
     print "Downloading file..."
     sfile = urllib.URLopener()
-    sfile.retrieve("https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/sampleblueprint.yaml", os.path.expanduser('~') + "/sample.yaml")
+    sfile.retrieve("https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/DeployAWSBlueprint/sampleblueprint.yaml", os.path.expanduser('~') + "/sample.yaml")
     print "Check your home directory for sample.yaml"
     sys.exit(0)
 
@@ -74,6 +72,9 @@ uid = str(uuid.uuid4())[:8]
 success=True
 conf = {}
 resdays = 7
+
+# figure out the ami
+aws = AWS()
 
 # default to 7 day reservation, otherwise take args
 if (arg.days != None):
@@ -126,7 +127,8 @@ def r_checkStatus(region, uid):
     
     if(not up):
         time.sleep(10)
-        print "."
+        sys.stdout.write(".")
+        sys.stdout.flush()
         r_checkStatus(region, uid)
 
 # where to deploy
@@ -134,25 +136,48 @@ def r_checkStatus(region, uid):
 ec2 = boto3.resource('ec2', region_name=region)
 
 # being deployment of each instance
+print "Deploying Instances..."
+tbl = Table()
+tbl.AddHeader(["Instance ID", "Name", "Op System", "Size", "Succ/Fail"])
+
 for resource in blueprint:
     print "Trying to deploy " + resource["name"]
     try:
         # actually deploy
-        inst = ec2.create_instances(ImageId=ami[resource["os"]]["id"], InstanceType=resource["size"], MinCount=1, MaxCount=1, SecurityGroupIds=[conf['sgID']], KeyName=conf['keypair'])
-        
+        inst = ec2.create_instances(ImageId=aws.getAMI(resource["os"])["id"], InstanceType=resource["size"], MinCount=1, MaxCount=1, SecurityGroupIds=[conf['sgID']], KeyName=conf['keypair'])
+        tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Success"])
         # update tags for tracking and reaping
         t[0] = {'Key':'Name', 'Value':uid + "_" +resource["name"]} 
         t[1] = {'Key':'owner', 'Value': conf["name"]} 
-        print "Created instance with instance ID: %s with Name: %s running: %s as a: %s" % (inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"])
         inst[0].create_tags(Tags=t)
     except:
         success=False
-        print "!! Could not deploy instance with Name: %s running: %s as a: %s" % (resource["name"], resource["os"], resource["size"])
+        tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Fail"])
 
 print
-print "Waiting for everything to come up..."
+print "Results:"
 print
+
+tbl.Draw()
+
+print
+sys.stdout.write("Waiting for successfully deployed instances to come up...")
+sys.stdout.flush()
 r_checkStatus(region, uid)
+print
+print "Instances are running..."
+print "Building Post-Configuration Plan..."
+
+tbl.Clear()
+tbl.AddHeader(["Name", "Type", "Machine Order", "Task Order", "Description"])
+for resource in blueprint:
+    i=0
+    if "tasks" in resource:
+        for task in resource["tasks"]:
+            tbl.AddRow([resource["name"], task["type"], str(resource["postinstallorder"]), str(i), task["description"]])
+            i=i+1
+
+tbl.Draw()
 
 # completed
 print 
