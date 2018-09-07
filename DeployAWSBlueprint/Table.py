@@ -3,11 +3,16 @@ class Table:
 	names = []
 	rows = []
 
-	def Draw(self):
-		self.__DrawHeader()
+	def Return(self):
+		retStr = ""
+		retStr += self.__DrawHeader()
 		for row in self.rows:
-			self.__DrawRow(row)
-		self.__DrawSeperator()
+			retStr += self.__DrawRow(row)
+		retStr += self.__DrawSeperator()
+		return retStr
+
+	def Draw(self):
+		print self.Return()
 
 	def AddHeader(self, names):
 		self.names = names
@@ -49,12 +54,14 @@ class Table:
 				headerString += "-"
 				i -= 1
 			headerString += "-+"
-		print headerString
+		return headerString
 
 	def __DrawHeader(self):
-		self.__DrawSeperator()
-		self.__DrawRow(self.names)
-		self.__DrawSeperator()
+		retStr = ""
+		retStr += self.__DrawSeperator() +"\n"
+		retStr += self.__DrawRow(self.names)
+		retStr += self.__DrawSeperator() +"\n"
+		return retStr
 		
 	def __DrawRow(self, names):
 		lineString = "| "
@@ -64,4 +71,4 @@ class Table:
 			lineString += strName.ljust(self.sizes[i])
 			lineString += " | "
 			i += 1
-		print lineString
+		return lineString  +"\n"

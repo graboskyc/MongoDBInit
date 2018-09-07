@@ -33,7 +33,7 @@ See the [sampleblueprint.yaml](sampleblueprint.yaml) for an example. But here is
 | | `size` | | name of AWS sizes |
 | | `postinstallorder` | | order of operations, only use if tasks are provided. Useful for things where one VM must be configured before others. Lower numbers get done before higher ones. |
 | | `tasks` | | OPTIONAL and completed in order | 
-| | | `-type` | `playbook`, `script` for ansible or bash/winrm |
+| | | `-type` | `playbook`, `shell`, `ps` for ansible or bash/winrm |
 | | | `url` | URL to where the script sits |
 | | | `description` | text field to describe what it does |
 

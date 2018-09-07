@@ -27,6 +27,7 @@ from Table import Table
 from ChangeManagement import ChangeManagement
 from AWS import AWS
 from Tasks import Tasks
+from Logger import Logger
 
 # Create your blueprint. if not specified, this is what we deploy.
 blueprint = []
@@ -40,14 +41,14 @@ parser = argparse.ArgumentParser(description='CLI Tool to esily deploy a bluepri
 parser.add_argument('-b', action="store", dest="blueprint", help="path to the blueprint")
 parser.add_argument("-s", "--sample", help="download a sample blueprint yaml", action="store_true")
 parser.add_argument('-d', action="store", dest="days", help="how many days should we reserve this for before reaping")
-parser.add_argument('-k', action="store", dest="key", help="ssh private key location")
+parser.add_argument('-k', action="store", dest="keypath", help="ssh private key location, required if using tasks")
 arg = parser.parse_args()
 
 # pull sample yaml file from github as reference
 if arg.sample:
     print "Downloading file..."
     sfile = urllib.URLopener()
-    sfile.retrieve("https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/DeployAWSBlueprint/sampleblueprint.yaml", os.path.expanduser('~') + "/sample.yaml")
+    sfile.retrieve("https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/DeployAWSBlueprint/Samples/sampleblueprint.yaml", os.path.expanduser('~') + "/sample.yaml")
     print "Check your home directory for sample.yaml"
     sys.exit(0)
 
@@ -72,6 +73,9 @@ uid = str(uuid.uuid4())[:8]
 success=True
 conf = {}
 resdays = 7
+
+# logging tool
+log = Logger(uid)
 
 # figure out the ami
 aws = AWS()
@@ -147,14 +151,14 @@ for resource in blueprint:
     try:
         # actually deploy
         inst = ec2.create_instances(ImageId=aws.getAMI(resource["os"])["id"], InstanceType=resource["size"], MinCount=1, MaxCount=1, SecurityGroupIds=[conf['sgID']], KeyName=conf['keypair'])
-        tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Success"])
         # update tags for tracking and reaping
         t[0] = {'Key':'Name', 'Value':uid + "_" +resource["name"]} 
         t[1] = {'Key':'owner', 'Value': conf["name"]} 
         inst[0].create_tags(Tags=t)
         resource["id"] = inst[0].id
         resource["resourcename"] = uid + "_" +resource["name"]
-        resource["username"] = ws.getAMI(resource["os"])["user"]
+        resource["username"] = aws.getAMI(resource["os"])["user"]
+        tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Success"])
     except:
         success=False
         tbl.AddRow([inst[0].id, uid + "_" +resource["name"], resource["os"], resource["size"], "Fail"])
@@ -164,6 +168,7 @@ print "Results:"
 print
 
 tbl.Draw()
+log.writeSection("Deploying Instances", tbl.Return())
 
 # wait for everything to come up
 print
@@ -177,6 +182,8 @@ print
 
 # build the task list
 tasks=Tasks()
+time.sleep(5)
+reservations = r_checkStatus(region, uid)
 for resource in blueprint:
     i=0
     # find the DNS Name
@@ -193,6 +200,7 @@ for resource in blueprint:
             task["resourcename"] = resource["name"]
             task["dns"] = resource["dns"]
             task["status"] = "Pending"
+            task["username"] = resource["username"]
             tl.append(task)
         tasks.addTaskGroup(int(resource["postinstallorder"]), tl)
 
@@ -208,13 +216,14 @@ print "Plan created:"
 print
 tbl.Draw()
 
+log.writeSection("Post-Deploy Plan", tbl.Return())
+
 if len(tasks.getTasks()) == 0:
     print 
     print "No tasks to do."
+    log.write("no tasks to do.")
     print
 else:
-    print
-    print "Tasks not yet implemented..."
     i=1
     cm = ChangeManagement()
     for tl in tasks.getTasks():
@@ -222,17 +231,52 @@ else:
             print "Beginning Task %s (%s) on %s..." % (str(i), t["description"], t["resourcedeployedname"])
             if t["type"] == "playbook":
                 t["status"] = "Running"
-                cm.runPlaybook(t["dns"],uid, i, arg.key)
+                try:
+                    result = cm.runPlaybook(r["url"], t["dns"], uid, i, arg.keypath, t["username"])
+                    log.writeTimestamp(result)
+                    t["status"] = "Completed"
+                except:
+                    t["status"] = "Failed"
+                    log.writeTimestamp("Tried running task " + str(i) + " on " + t["dns"])
+                    log.write("ERROR:")
+                    log.write(str(sys.exc_info()[0]))
+            if t["type"] == "shell":
+                t["status"] = "Running"
+                try:
+                    result = cm.runBashScript(t["url"], t["dns"], uid, i, arg.keypath, t["username"])
+                    log.writeTimestamp(result)
+                    t["status"] = "Completed"
+                except:
+                    t["status"] = "Failed"
+                    log.writeTimestamp("Tried running task " + str(i) + " on " + t["dns"])
+                    log.write("ERROR:")
+                    log.write(str(sys.exc_info()))
             else:
-                print "!!Type " + t["type"] + " support is not yet implemented!"
-                t["status"] = "Failed"
+                t["status"] = "TypeError"
+                log.writeTimestamp("Tried running task " + str(i) + " on " + t["dns"])
+                log.write("ERROR:\nUnsupported task type.")
             i=i+1
     print
+
+# print results
+i=1
+tbl.Clear()
+tbl.AddHeader(["Task Number", "Name", "ID", "Public DNS Name", "Type", "Description", "Status"])
+for tl in tasks.getTasks():
+    for t in tl:
+        tbl.AddRow([str(i), t["resourcedeployedname"],t["resourceid"], t["dns"], t["type"],t["description"], t["status"]])
+        i=i+1
+print "Plan results:"
+print
+tbl.Draw()
+log.write(tbl.Return())
 
 # completed
 print 
 if success:
     print "Blueprint Successfully Deployed!"
+    log.writeSection("Completion", "Blueprint Successfully Deployed!")
 else:
     print "The blueprint may not have been successfully deployed."
+    log.writeSection("Completion", "The blueprint may not have been successfully deployed.")
 print
