@@ -13,7 +13,7 @@ resources:
     size: t2.micro
     postinstallorder: 10
     tasks:
-      - type: script
+      - type: shell
         url: https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/DeployAWSBlueprint/Samples/helloworld.sh
         description: Hello World
   - name: DB2
