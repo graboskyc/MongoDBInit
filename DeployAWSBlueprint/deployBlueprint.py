@@ -13,7 +13,6 @@
 #           https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/updateAWSSG.sh
 ######################################
 
-import boto3
 import os
 import sys
 import datetime
@@ -77,9 +76,6 @@ resdays = 7
 # logging tool
 log = Logger(uid)
 
-# figure out the ami
-aws = AWS()
-
 # default to 7 day reservation, otherwise take args
 if (arg.days != None):
     resdays = int(arg.days)
@@ -122,8 +118,8 @@ else:
 # recusrsive function to check to make sure instances are up
 def r_checkStatus(region, uid):
     up=True
-    ec2 = boto3.client('ec2', region_name=region)
-    reservations = ec2.describe_instances(Filters=[{"Name":"tag:use-group", "Values":[uid]}])
+    aws = AWS(region)
+    reservations = aws.getInstances([{"Name":"tag:use-group", "Values":[uid]}])
     for r in reservations["Reservations"]:
         for i in r["Instances"]:
             if i["State"]["Name"] != "running":
@@ -139,7 +135,7 @@ def r_checkStatus(region, uid):
 
 # where to deploy
 # remember, you need ~/.aws/credentials set!
-ec2 = boto3.resource('ec2', region_name=region)
+aws = AWS(region)
 
 # being deployment of each instance
 print "Deploying Instances..."
@@ -150,7 +146,7 @@ for resource in blueprint:
     print "Trying to deploy " + resource["name"]
     try:
         # actually deploy
-        inst = ec2.create_instances(ImageId=aws.getAMI(resource["os"])["id"], InstanceType=resource["size"], MinCount=1, MaxCount=1, SecurityGroupIds=[conf['sgID']], KeyName=conf['keypair'])
+        inst = aws.makeInstance(aws.getAMI(resource["os"])["id"], resource["size"], [conf['sgID']], conf['keypair'])
         # update tags for tracking and reaping
         t[0] = {'Key':'Name', 'Value':uid + "_" +resource["name"]} 
         t[1] = {'Key':'owner', 'Value': conf["name"]} 
