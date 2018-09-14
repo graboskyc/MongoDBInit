@@ -187,7 +187,11 @@ for service in sblueprint:
         bi = service["backup"]
     if "encrypted" in service:
         enc = service["encrypted"]
-    worked,output = atlas.createCluster(service["name"], service["groupid"], service["region"], service["type"], service["version"], service["cloud"], service["size"], service["rscount"], service["shards"], backup, bi, enc)
+    if "iops" in service:
+        iops = int(service["iops"]
+    if "disksize" in service:
+        ds = service["disksize"]
+    worked,output = atlas.createCluster(service["name"], service["groupid"], service["region"], service["type"], service["version"], service["cloud"], service["size"], service["rscount"], service["shards"], ds, iops, backup, bi, enc)
     if worked:
         tbl.AddRow([service["name"], service["type"], service["cloud"], service["size"], "Deploying..."])
     else:

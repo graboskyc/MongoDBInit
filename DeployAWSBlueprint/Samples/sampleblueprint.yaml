@@ -5,7 +5,29 @@ metadata:
   blueprint_version: 0.1.0
 
 apiVersion: v1
-
+resources:
+  - name: DB1
+    description: db 1 of replica set
+    os: ubuntu
+    size: t2.micro
+    postinstallorder: 10
+    tasks:
+      - type: shell
+        url: https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/DeployAWSBlueprint/Samples/helloworld.sh
+        description: Hello World
+  - name: DB2
+    description: db 2 of replica set
+    os: ubuntu
+    size: t2.micro
+  - name: DB3
+    description: db 2 of replica set
+    os: ubuntu
+    size: t2.micro
+  - name: OpsMgr
+    description: Ops manager for deployment
+    os: ubuntu
+    size: t2.large 
+ 
 services:
   - name: cluster abc 123
     description: sample atlas service
@@ -20,3 +42,5 @@ services:
     encrypted: false
     rscount: 3
     shards: 1
+    disksize: 16
+    iops: 100
