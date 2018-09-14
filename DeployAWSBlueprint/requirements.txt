@@ -2,3 +2,4 @@ paramiko
 scp
 ConfigParser
 boto3
+requests

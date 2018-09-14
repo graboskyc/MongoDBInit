@@ -7,7 +7,7 @@
 # About:    deploys a blueprint
 # Deps:     boto3, ConfigParser, paramiko, scp pkgs installed. 
 #           aws config file installed for user via aws cli tools `aws configure`
-#           Config file in ~/.gskyaws
+#           Config file in ~/.gskyaws.conf
 #           Need ~/.ansible.cfg with [defaults] host_key_checking = False
 # Refs:     https://github.com/graboskyc/MongoDBInit
 #           https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/updateAWSSG.sh
@@ -27,6 +27,7 @@ from ChangeManagement import ChangeManagement
 from AWS import AWS
 from Tasks import Tasks
 from Logger import Logger
+from Atlas import Atlas
 
 # Create your blueprint. if not specified, this is what we deploy.
 blueprint = []
@@ -63,7 +64,11 @@ if (arg.blueprint != None):
             sys.exit(2)
      
     blueprint = []
-    blueprint = y["resources"]
+    sblueprint = []
+    if "resources" in y:
+        blueprint = y["resources"]
+    if "services" in y:
+        sblueprint = y["services"]
 
 # always prepend a random 8 characters 
 # makes it easier to find and be grouped later
@@ -141,7 +146,6 @@ aws = AWS(region)
 print "Deploying Instances..."
 tbl = Table()
 tbl.AddHeader(["Instance ID", "Name", "Op System", "Size", "Succ/Fail"])
-
 for resource in blueprint:
     print "Trying to deploy " + resource["name"]
     try:
@@ -165,6 +169,34 @@ print
 
 tbl.Draw()
 log.writeSection("Deploying Instances", tbl.Return())
+
+tbl.Clear()
+print "Deploying services..."
+log.writeSection("Deploying Atlas", "")
+tbl.AddHeader(["Name", "Type", "Cloud", "Size", "Status"])
+atlas = Atlas(conf["atlasusername"], conf["atlasapikey"], uid)
+for service in sblueprint:
+    print "Trying to deploy " + service["name"]
+    log.writeTimestamp("Trying to deploy" + service["name"])
+    backup = False
+    bi = False
+    enc = False
+    if "backup" in service:
+        backup = service["backup"]
+    if "biconnector" in service:
+        bi = service["backup"]
+    if "encrypted" in service:
+        enc = service["encrypted"]
+    worked,output = atlas.createCluster(service["name"], service["groupid"], service["region"], service["type"], service["version"], service["cloud"], service["size"], service["rscount"], service["shards"], backup, bi, enc)
+    if worked:
+        tbl.AddRow([service["name"], service["type"], service["cloud"], service["size"], "Deploying..."])
+    else:
+        tbl.AddRow([service["name"], service["type"], service["cloud"], service["size"], "Failed!"])
+        log.write("ERROR!")
+    log.write(output)
+log.write(tbl.Return())
+print "Services deployed:"
+tbl.Draw()
 
 # wait for everything to come up
 print
