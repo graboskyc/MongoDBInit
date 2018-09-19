@@ -1,6 +1,0 @@
----
-- name: Hello Wolrd
-  hosts: all 
-  tasks:
-    - name: Say Hello
-      shell: echo "Hello World!"
