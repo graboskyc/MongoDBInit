@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# cd /tmp;wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/StageMyShit.sh -O StageMyShit.sh;chmod +x StageMyShit.sh
+
 cd /tmp
 wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/installOpsMgr.sh -O installOpsMgr.sh
 wget https://raw.githubusercontent.com/graboskyc/MongoDBInit/master/installEA.sh -O installEA.sh
