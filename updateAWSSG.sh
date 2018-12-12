@@ -13,7 +13,7 @@
 pubIP=`wget -qO- ipinfo.io/ip`
 
 # ports
-authPorts=(22 8080)
+authPorts=(22 8080 8443 3389)
 sgID=""
 
 hash aws 2>/dev/null || { echo >&2 "This script requires the AWS cli console. Install it first."; exit 3; }
