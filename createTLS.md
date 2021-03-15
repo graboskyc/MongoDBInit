@@ -66,6 +66,32 @@ There is a `openssl-test-server.cnf` sample. Sub out IPs and hostnames. must mat
 
 `cat mongodb-test-server1.crt mongodb-test-server1.key > test-server1.pem`
 
+# Handle the client
+
+## make openssl config file
+
+Follow along https://docs.mongodb.com/manual/appendix/security/appendixC-openssl-client/
+
+See `openssl-test-client.cnf` 
+
+## generate client pem
+
+`openssl genrsa -out mongodb-test-client.key 4096`
+
+## make client CSR
+
+`openssl req -new -key mongodb-test-client.key -out mongodb-test-client.csr -config openssl-test-client.cnf`
+
+and answer prompts
+
+## make client cert
+
+`openssl x509 -sha256 -req -days 365 -in mongodb-test-client.csr -CA mongodb-test-ia.crt -CAkey mongodb-test-ia.key -CAcreateserial -out mongodb-test-client.crt -extfile openssl-test-client.cnf -extensions v3_req`
+
+## combine files into PEM key format
+
+`cat mongodb-test-client.crt mongodb-test-client.key > test-client.pem`
+
 # Configure MongoDB
 
 ## make the directory for mongodb
@@ -95,36 +121,41 @@ processManagement:
 
 `mongod -f r0.conf`
 
-# Handle the client
+## using localhost exception, create un/pw
 
-## make openssl config file
-
-Follow along https://docs.mongodb.com/manual/appendix/security/appendixC-openssl-client/
-
-See `openssl-test-client.cnf` 
-
-## generate client pem
-
-`openssl genrsa -out mongodb-test-client.key 4096`
-
-## make client CSR
-
-`openssl req -new -key mongodb-test-client.key -out mongodb-test-client.csr -config openssl-test-client.cnf`
-
-and answer prompts
-
-## make client cert
-
-`openssl x509 -sha256 -req -days 365 -in mongodb-test-client.csr -CA mongodb-test-ia.crt -CAkey mongodb-test-ia.key -CAcreateserial -out mongodb-test-client.crt -extfile openssl-test-client.cnf -extensions v3_req`
-
-## combine files into PEM key format
-
-`cat mongodb-test-client.crt mongodb-test-client.key > test-client.pem`
+ `mongo --tls --host <serverHost> --tlsCertificateKeyFile test-client.pem  --tlsCAFile test-ca.pem --eval "db = db.getSisterDB('admin');db.createUser({user:'root',pwd:'root123',roles:['root']});"`
 
 # Test connection
 
-## mongo shell
+## Copy over certs
 
-`mongo --tls --host <serverHost> --tlsCertificateKeyFile test-client.pem  --tlsCAFile test-ca.pem` 
+copy `test-ca.pem` and `test-client.pem` to another machine
+
+## mongo shell from remote machine
+
+`mongo --tls --host mongodb://root:root123@<publichostname> --tlsCertificateKeyFile test-client.pem  --tlsCAFile test-ca.pem` 
 
 Note that the host must match DNS exactly as you set up earlier in the config file! 
+
+## Sample python code
+
+Remember about the hostname as mentioned above! `tlsAllowInvalidCertificates` must be set as the CA is not in our trust chain so either set this to `True` or add it to chain of trus.
+
+```
+import pymongo
+import time
+
+client = pymongo.MongoClient('mongodb://root:root123@<publichostname>', tls=True, tlsCAFile='./cacert.pem', tlsCertificateKeyFile='./test-client.pem', tlsAllowInvalidCertificates=True)
+
+db = client.isItWorking
+i = 0
+while True:
+    print("Inserting record " + str(i))
+    db.test.insert_one({"itIsWorking":True, "i":i})
+    time.sleep(1)
+    i=i+1
+```
+
+On this shell you should see an increasing counter. 
+
+Log into the DB with mongo shell and see that a DB called `isItWorking` and collection `test` are created and it is inserting a document a second.
