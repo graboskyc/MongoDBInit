@@ -18,44 +18,44 @@ subjectAltName = @alt_names
 
 [ alt_names ]
 
-DNS.1 =         ##TODO: Enter the DNS names. The DNS names should match the server names.
+DNS.1 = ec2-18-212-178-60.compute-1.amazonaws.com
 
-DNS.2 =         ##TODO: Enter the DNS names. The DNS names should match the server names.
+DNS.2 = ip-172-31-53-236
 
-IP.1 =          ##TODO: Enter the IP address. SAN matching by IP address is available starting in MongoDB 4.2
+IP.1 = 18.212.178.60
 
-IP.2 =          ##TODO: Enter the IP address. SAN matching by IP address is available starting in MongoDB 4.2
+IP.2 = 172.31.53.236
 
 
 [ req_dn ]
 countryName = Country Name (2 letter code)
 
-countryName_default = TestServerCertificateCountry
+countryName_default = US
 
 countryName_min = 2
 countryName_max = 2
 
 stateOrProvinceName = State or Province Name (full name)
 
-stateOrProvinceName_default = TestServerCertificateState
+stateOrProvinceName_default = NJ
 
 stateOrProvinceName_max = 64
 
 localityName = Locality Name (eg, city)
 
-localityName_default = TestServerCertificateLocality
+localityName_default = Delran
 
 localityName_max = 64
 
 organizationName = Organization Name (eg, company)
 
-organizationName_default = TestServerCertificateOrg
+organizationName_default = GSKY
 
 organizationName_max = 64
 
 organizationalUnitName = Organizational Unit Name (eg, section)
 
-organizationalUnitName_default = TestServerCertificateOrgUnit
+organizationalUnitName_default = test
 
 organizationalUnitName_max = 64
 
