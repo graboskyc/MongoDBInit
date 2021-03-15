@@ -5,6 +5,10 @@
 * commands assume ubuntu but should work generally speaking
 * openssl installed
 * mongodb-enterprise installed (https://docs.mongodb.com/manual/tutorial/install-mongodb-enterprise-on-ubuntu/) 
+* If doing python sample test code:
+  * `python3` installed and in path
+  * `pip` module `pymongo` installed for python3
+  * TLS support instaleld for pymongo (`pymongo[TLS]`)
 
 # Set up CA and intermediate CA
 
